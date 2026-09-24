@@ -1,84 +1,119 @@
+# HR Attrition Dashboard (Excel)
 
-<img width="1354" alt="Dashboard Image" src="images/Dashboard.png">
-The HR Employee Analysis Dashboard provides a detailed analysis of employee demographics, attrition trends, and workforce stability.
-It helps HR teams identify problem areas, improve retention, and foster a more engaged workforce.
+**Level: beginner to intermediate.** An Excel dashboard on employee attrition:
+pivot tables, slicers and charts on a 1,470-employee dataset. The part I'm proud of is
+what happened when I went back and checked it: I found that my first version
+answered the wrong question, and the corrected version reaches different conclusions.
 
-This project was developed using Microsoft Excel for:
+![Dashboard](images/Dashboard.png)
 
-Data Cleaning
+## The data
 
-Data Transformation
+`data/hr_attrition.csv` is the public IBM HR Analytics "Employee Attrition &
+Performance" sample dataset that people use to practise: 1,470 employees, 237 of whom
+left. It's fictional data, not a real company's staff. I dropped the columns that
+never change and the helper columns the workbook had added.
 
-Interactive Visualizations
+## What was wrong with my first dashboard
 
-📈 Key Insights
-1. Total Employees by Gender
+Three of the pivot tables (Job Role, Age-Group, Marital Status) used
+**Count of CF_attrition count**. That counts every employee in the group, so it
+measures how big the group is, not how many left. Each of those tables added up to
+1,470 (everyone) instead of 237 (the leavers). A chart called "Attrition By
+Age-Group" was really a chart of headcount by age.
 
-40% Female
+Even where the counts were right, they were the wrong thing to look at. My README
+said R&D was the high-turnover department because it had 56% of all leavers. R&D
+is simply the biggest department. What matters is the **rate**, the share of a
+group's people who left:
 
-60% Male
-Helps evaluate diversity and representation across the organization.
+| Department | Employees | Leavers | Share of all leavers (what I reported) | **Attrition rate** |
+|---|---:|---:|---:|---:|
+| R&D | 961 | 133 | 56.1% | **13.8%** (lowest) |
+| Sales | 446 | 92 | 38.8% | **20.6%** (highest) |
+| HR | 63 | 12 | 5.1% | **19.0%** |
 
-2. Attrition by Department
+The same mistake hid the age pattern. "25-34" has the most leavers (112) because it's
+the biggest age group, but the group that leaves most often is **under 25: 38 of 97,
+39.2%**, about four times the rate of the 35-54 groups (about 10%).
 
-Sales: 38.82%
+## What I changed
 
-R&D: 56.12%
+- The three pivots now sum leavers (their totals are 237).
+- A new sheet, **Attrition Rates**, gives employees, leavers, rate and share of
+  leavers for six groupings, using live `COUNTIFS` formulas over the data table.
+- Two dashboard charts ("Job Role" and "Marital-Status") had turned into "This
+  chart isn't available in your version of Excel" placeholders. I replaced them with
+  ordinary charts of the attrition rate.
+- Titles now say what each chart shows ("Leavers By Education", "Share Of Leavers By
+  Department", "Attrition Rate By Job Role").
 
-HR: 5.06%
-Identifies high-turnover departments for targeted retention strategies.
+## What goes with leaving
 
-3. Attrition by Age Group
+Company-wide, 16.1% left. I compared every group against that, showing how many
+times higher or lower the group's rate is ("lift") and a 95% interval, because a group of 50 people can
+look dramatic by chance. Groups under 50 are never ranked.
 
-Largest attrition in 25-34 and 35-44 age ranges.
-Highlights workforce stability challenges among younger and mid-career employees.
+| Group | Employees | Leavers | Rate | Lift |
+|---|---:|---:|---:|---:|
+| Sales Representative | 83 | 33 | 39.8% | 2.5x |
+| Under 25 | 97 | 38 | 39.2% | 2.4x |
+| 0-1 years at the company | 215 | 75 | 34.9% | 2.2x |
+| Works overtime | 416 | 127 | 30.5% | 1.9x |
+| Lowest income quartile | 369 | 108 | 29.3% | 1.8x |
+| Single | 470 | 120 | 25.5% | 1.6x |
+| Does not work overtime | 1,054 | 110 | 10.4% | 0.6x |
 
-4. Attrition by Education
+To make it easy to follow I counted three flags per person: **works overtime,
+single, under 30**.
 
-Highest attrition from Bachelor’s degree holders (99 employees).
-Can guide training, engagement, and upskilling initiatives.
+| Flags | Employees | Leavers | Rate |
+|---|---:|---:|---:|
+| 0 | 574 | 41 | 7.1% |
+| 1 | 620 | 81 | 13.1% |
+| 2 | 236 | 88 | 37.3% |
+| 3 | 40 | 27 | 67.5% |
 
-5. Attrition by Job Role & Marital Status
+Read this carefully: it describes who left in this dataset. It doesn't prove why
+anyone left, and these factors overlap (junior people are younger, paid less and newer).
+The three-flag group is only 40 people, so its 67.5% is a rough figure (the 95%
+interval is wide). It's also a simple count, not a prediction model.
 
-Reveals turnover patterns linked to specific job roles and personal demographics.
+The full tables are in `output/attrition_rates.md` and `output/attrition_drivers.md`.
 
-🛠 Tools & Techniques Used
+## Running it
 
-Microsoft Excel
+```bash
+pip install -r requirements.txt
+python verify_numbers.py          # print every table above
+python verify_numbers.py --save   # also write output/*.md
+python -m pytest tests -q         # 11 tests
+```
 
-Power Query for data cleaning
+The tests work out expected values separately (a plain `csv` count of leavers, a
+check that every group table adds up to 1,470 and 237, known values for the
+interval formula) and compare them with the numbers stored inside the Excel
+workbook, so the workbook and the Python can't disagree quietly.
 
-Pivot Tables for data transformation
+## Files
 
-Charts & Slicers for interactive dashboards
+```
+HR-Employee-Analysis.xlsx   the dashboard (slicers, pivots, charts, Attrition Rates sheet)
+data/hr_attrition.csv       the data
+verify_numbers.py           every number in this README, recomputed
+output/                     the tables it writes
+tests/test_numbers.py       tests, including the Excel workbook's stored results
+images/Dashboard.png        screenshot of the dashboard
+```
 
-Data visualization best practices for clear storytelling.
+Built with Excel (pivot tables, slicers, `COUNTIFS`) and Python (pandas, pytest).
 
-📂 Project Structure
-📁 HR_Employee_Analysis_Dashboard
- ├── 📄 HR_Analytics_Dashboard.xlsx   # Main dashboard file
- ├── 📁 images
- │    └── Dashboard.png               # Dashboard screenshot
- └── 📄 README.md                     # Project documentation
+## Limits
 
-🚀 How to Use
+- It's a practice dataset, so treat the findings as a demonstration of the method
+  and not as facts about any real company.
+- The Age-Group chart still shows counts of leavers by age (now correctly labelled).
+  For the age *rate* use the Attrition Rates sheet or the table above.
 
-Download the .xlsx file from this repository.
-
-Open in Microsoft Excel (latest version recommended).
-
-Use slicers and filters to explore different HR metrics.
-
-🎯 Impact
-
-This dashboard enables HR teams to:
-
-Detect and address high attrition areas
-
-Monitor diversity metrics
-
-Improve employee satisfaction
-
-Support data-driven HR decisions
-
-Author: Muhammad Adnan
+Muhammad Adnan, [LinkedIn](https://linkedin.com/in/muhammad-adnan-740336293),
+adnandanish0404@gmail.com
