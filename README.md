@@ -2,7 +2,7 @@
 
 ![tests](https://github.com/Adnan040404/HR_Employe_Analytics_dashboard/actions/workflows/tests.yml/badge.svg)
 
-**Level: beginner to intermediate.** An Excel dashboard on employee attrition:
+An Excel dashboard on employee attrition:
 pivot tables, slicers and charts on a 1,470-employee dataset. The part I'm proud of is
 what happened when I went back and checked it: I found that my first version
 answered the wrong question, and the corrected version reaches different conclusions.
